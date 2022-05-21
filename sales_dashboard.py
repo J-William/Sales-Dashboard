@@ -3,6 +3,7 @@
 
 """
 
+from asyncio.windows_events import NULL
 import pandas as pd
 import dash
 from dash import html
@@ -100,6 +101,9 @@ app.layout = html.Div(children=[
 @app.callback(Output(component_id='segment-plot', component_property='figure'),
 				Input(component_id='segment-input', component_property='value'))
 def get_segment_graph(segment_input):
+	if not segment_input:
+		return NULL
+		
 	# Get the data for the selected state
 	df = get_data()
 	segment_data = df.groupby(['State', 'Segment'])['Profit'].sum().reset_index()
@@ -115,9 +119,13 @@ def get_segment_graph(segment_input):
 @app.callback(Output(component_id='ship-plot', component_property='figure'),
 				Input(component_id='ship-input', component_property='value'))
 def get_shipment_graph(ship_input):
+	if not ship_input:
+		return NULL
+
 	ship_data = get_data()
 	# Get the required dataset from the sales data 
 	ship_data = ship_data.groupby('State')['Ship Mode'].value_counts()
+
 	ship_data = ship_data[ship_input]
 	ship_data = ship_data.to_frame()
 	ship_data = ship_data.rename(columns={'Ship Mode': 'Mode', 'Ship Mode': 'Value'})
@@ -132,6 +140,9 @@ def get_shipment_graph(ship_input):
 @app.callback(Output(component_id='del-plot', component_property='figure'),
 				Input(component_id='del-input', component_property='value'))
 def get_delivery_graph(del_input):
+	if not del_input:
+		return NULL
+
 	del_data = get_data()
 	# Get the required dataset
 	del_data = del_data[del_data['State'] == del_input]
@@ -144,6 +155,9 @@ def get_delivery_graph(del_input):
 @app.callback(Output(component_id='sale-plot', component_property='figure'),
 				Input(component_id='sale-input', component_property='value'))
 def get_sales_graph(sale_input):
+	if not sale_input:
+		return NULL
+
 	sale_data = get_data()
 
 	sale_data = sale_data.groupby(['Category', 'State'])['Sales'].sum().reset_index()
