@@ -10,7 +10,6 @@ from dash import html
 from dash import dcc
 from dash.dependencies import Input, Output
 import plotly.express as px
-import sqlite3
 
 # Using a basic CSS stylesheet
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -21,21 +20,10 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 # Clear layout and don't display exceptions until callback
 app.config.suppress_callback_exceptions = True
 
-
-# Use to retrieve sales data from the database
-def get_data():
-	conn = sqlite3.connect('sales.db')
-	data = pd.read_sql_query("SELECT * FROM sales", conn)
-	conn.close()
-	return data
-
-
-# Get the list of states from the db for the dropdown
-conn = sqlite3.connect('sales.db')
-STATES = pd.read_sql_query("SELECT * FROM states", conn)
-STATES = sorted(list(STATES['State']))
-conn.close()
-
+# Read in the data	
+data = pd.read_csv('sales.csv')
+# Get the list of states for the dropdown
+states = sorted(list(data['State'].unique()))
 
 
 # Application layout
@@ -49,7 +37,7 @@ app.layout = html.Div(children=[
 				html.H5('Profit by Segment and State'),
 				dcc.Dropdown(
 						id='segment-input',
-						options=[{'label': i, 'value': i} for i in STATES],
+						options=[{'label': i, 'value': i} for i in states],
 						placeholder="Select a state",
 						style= {'width': 300, 'padding': 3}
 						),
@@ -60,7 +48,7 @@ app.layout = html.Div(children=[
 				html.H5('Ship Mode Requested by State'),
 				dcc.Dropdown(
 						id='ship-input',
-						options=[{'label': i, 'value': i} for i in STATES],
+						options=[{'label': i, 'value': i} for i in states],
 						placeholder="Select a state",
 						style= {'width': 300, 'padding': 3}
 						),
@@ -74,7 +62,7 @@ app.layout = html.Div(children=[
 				"Input: ",
 				dcc.Dropdown(
 						id='del-input',
-						options=[{'label': i, 'value': i} for i in STATES],
+						options=[{'label': i, 'value': i} for i in states],
 						placeholder="Select a state",
 						style= {'width': 300, 'padding': 3}
 						),
@@ -85,7 +73,7 @@ app.layout = html.Div(children=[
 							"Input: ",
 				dcc.Dropdown(
 						id='sale-input',
-						options=[{'label': i, 'value': i} for i in STATES],
+						options=[{'label': i, 'value': i} for i in states],
 						placeholder="Select a state",
 						style= {'width': 300, 'padding': 3}
 						),
@@ -103,10 +91,11 @@ app.layout = html.Div(children=[
 def get_segment_graph(segment_input):
 	if not segment_input:
 		return NULL
-		
+
+	segment_data = data.copy()
+
 	# Get the data for the selected state
-	df = get_data()
-	segment_data = df.groupby(['State', 'Segment'])['Profit'].sum().reset_index()
+	segment_data = segment_data.groupby(['State', 'Segment'])['Profit'].sum().reset_index()
 	segment_data = segment_data[segment_data['State'] == segment_input]
 
 	# Build the bar chart
@@ -122,7 +111,7 @@ def get_shipment_graph(ship_input):
 	if not ship_input:
 		return NULL
 
-	ship_data = get_data()
+	ship_data = data.copy()
 	# Get the required dataset from the sales data 
 	ship_data = ship_data.groupby('State')['Ship Mode'].value_counts()
 
@@ -143,7 +132,7 @@ def get_delivery_graph(del_input):
 	if not del_input:
 		return NULL
 
-	del_data = get_data()
+	del_data = data.copy()
 	# Get the required dataset
 	del_data = del_data[del_data['State'] == del_input]
 	# build the figure
@@ -158,7 +147,7 @@ def get_sales_graph(sale_input):
 	if not sale_input:
 		return NULL
 
-	sale_data = get_data()
+	sale_data = data.copy()
 
 	sale_data = sale_data.groupby(['Category', 'State'])['Sales'].sum().reset_index()
 	sale_data = sale_data[sale_data['State']==sale_input]
